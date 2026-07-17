@@ -41,18 +41,30 @@ The root filesystem and exact boot arguments depend on the userspace being run. 
 The kernel enables:
 
 ```text
-CONFIG_UML_NET=y
-CONFIG_UML_NET_SLIRP=y
 CONFIG_UML_NET_VECTOR=y
 ```
 
-Install SLiRP support in the persistent TIKE environment instead of building it in this workflow:
+`CONFIG_UML_NET` and `CONFIG_UML_NET_SLIRP` no longer exist upstream: the legacy
+UML network transports (ethertap, tuntap, slip, daemon, mcast, slirp) were
+removed from the kernel in May 2025 (`e619e18ed462`, "um: Remove legacy network
+transport infrastructure") in favor of the vector driver.
+
+Install VDE SLiRP support in the persistent TIKE environment instead of building it in this workflow, building each in order (no packaged builds exist):
 
 ```bash
-conda install -c conda-forge libslirp
+for repo in vdeplug4 libvdeslirp vdeplug_slirp; do
+  git clone "https://github.com/virtualsquare/$repo.git"
+  cmake -S "$repo" -B "$repo/build"
+  cmake --build "$repo/build"
+  sudo cmake --install "$repo/build"
+done
 ```
 
-SLiRP provides rootless outbound networking suitable for HTTPS calls to the Databricks API. The UML guest must also configure its interface, default route, DNS, and CA certificates. Pass the installed SLiRP helper to UML with an `eth0=slirp,...` boot argument appropriate for the environment.
+VDE's `slirp://` VNL provides the same rootless outbound networking previously
+supplied by `CONFIG_UML_NET_SLIRP`, now suitable for HTTPS calls to the
+Databricks API. The UML guest must also configure its interface, default
+route, DNS, and CA certificates. Pass the installed VDE SLiRP helper to UML
+with an `eth0=vde,vnl=slirp://` boot argument appropriate for the environment.
 
 ## Custom builds
 
@@ -73,8 +85,6 @@ Required configurations are applied and verified after `olddefconfig` but before
 CONFIG_FUSE_FS=y
 CONFIG_HOSTFS=y
 CONFIG_CUSE=y
-CONFIG_UML_NET=y
-CONFIG_UML_NET_SLIRP=y
 CONFIG_UML_NET_VECTOR=y
 ```
 

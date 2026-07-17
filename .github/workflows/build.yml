@@ -221,8 +221,6 @@ jobs:
             CONFIG_FUSE_FS=y
             CONFIG_HOSTFS=y
             CONFIG_CUSE=y
-            CONFIG_UML_NET=y
-            CONFIG_UML_NET_SLIRP=y
             CONFIG_UML_NET_VECTOR=y
           )
           for token in "${required_configs[@]}"; do
@@ -301,8 +299,6 @@ jobs:
           - Confirmed: \`CONFIG_FUSE_FS=y\`
           - Confirmed: \`CONFIG_HOSTFS=y\`
           - Confirmed: \`CONFIG_CUSE=y\`
-          - Confirmed: \`CONFIG_UML_NET=y\`
-          - Confirmed: \`CONFIG_UML_NET_SLIRP=y\`
           - Confirmed: \`CONFIG_UML_NET_VECTOR=y\`
 
           Install on TIKE:
@@ -330,8 +326,10 @@ jobs:
           sleep 3 && ls /mnt/uc
           \`\`\`
 
-          > **Note:** Install SLiRP support for networking with \`conda install -c conda-forge libslirp\`
-          > before mounting volumes that require outbound HTTPS calls.
+          > **Note:** Install VDE SLiRP support for rootless networking with
+          > \`vdeplug4\`, \`libvdeslirp\`, and \`vdeplug_slirp\` (github.com/virtualsquare),
+          > then boot with \`eth0=vde,vnl=slirp://\` before mounting volumes that
+          > require outbound HTTPS calls.
           EOF
 
       - name: Upload staged release files
