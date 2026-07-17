@@ -311,7 +311,7 @@ jobs:
 
           \`\`\`bash
           # 1. Boot UML (home dir accessible via hostfs)
-          ~/linux-fuse.um mem=2G rootfstype=hostfs rootflags=/ init=/bin/bash
+          ~/linux-fuse.um mem=2G rootfstype=hostfs rootflags=/ rw init=/bin/bash
 
           # 2. Inside UML — /dev/fuse now works because UML has its own kernel
           mount -t proc proc /proc
