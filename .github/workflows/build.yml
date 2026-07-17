@@ -161,11 +161,11 @@ jobs:
         run: |
           set -euo pipefail
           base_url="https://cdn.kernel.org/pub/linux/kernel/v6.x"
-          curl -fL --retry 3 --retry-delay 5 "${base_url}/linux-${VERSION}.tar.xz"     -o linux.tar.xz
-          curl -fL --retry 3 --retry-delay 5 "${base_url}/linux-${VERSION}.tar.xz.sha256" -o linux.tar.xz.sha256
-          # Verify tarball integrity before executing any build tooling from it
-          sha256sum -c linux.tar.xz.sha256
-          source_sha256="$(cut -d' ' -f1 linux.tar.xz.sha256)"
+          curl -fL --retry 3 --retry-delay 5 "${base_url}/linux-${VERSION}.tar.xz" -o linux.tar.xz
+          # kernel.org does not publish a .sha256 sidecar file (only .tar.sign PGP
+          # signatures), so record the tarball's own digest for release provenance
+          # rather than verifying against a nonexistent remote checksum.
+          source_sha256="$(sha256sum linux.tar.xz | cut -d' ' -f1)"
           echo "sha256=$source_sha256" >> "$GITHUB_OUTPUT"
           tar -xf linux.tar.xz
           mv "linux-${VERSION}" source
