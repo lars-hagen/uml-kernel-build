@@ -1,5 +1,5 @@
 name: Build UML kernel
-
+# trigger GitHub Actions workflow re-indexing
 on:
   workflow_dispatch:
     inputs:
