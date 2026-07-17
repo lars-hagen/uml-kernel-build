@@ -80,12 +80,12 @@ jobs:
           fi
 
           if command -v dnf >/dev/null 2>&1; then
-            dnf install -y \
+            dnf install -y --allowerasing \
               bc binutils bison curl diffutils elfutils-libelf-devel file \
               findutils flex gcc gcc-c++ gzip jq make ncurses-devel \
               openssl-devel perl tar xz "${llvm_packages[@]}"
           elif command -v yum >/dev/null 2>&1; then
-            yum install -y \
+            yum install -y --allowerasing \
               bc binutils bison curl diffutils elfutils-libelf-devel file \
               findutils flex gcc gcc-c++ gzip jq make ncurses-devel \
               openssl-devel perl tar xz "${llvm_packages[@]}"
