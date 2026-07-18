@@ -85,6 +85,13 @@ jobs:
             python3 -m pip install --user meson ninja
             echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           fi
+          # libvdeslirp requires CMake >= 3.25; some base images (e.g. AL2023)
+          # package an older one. Get a current CMake from pip instead of
+          # building it from source.
+          if ! cmake --version | head -1 | grep -qE ' (3\.(2[5-9]|[3-9][0-9])|[4-9]\.)'; then
+            python3 -m pip install --user "cmake>=3.25"
+            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          fi
 
       - name: Resolve release metadata
         id: metadata
@@ -124,7 +131,7 @@ jobs:
           # 2. vdeplug4 (cmake) -> libvdeplug, vde_plug, dpipe, vdeplug_mod
           git clone https://github.com/rd235/vdeplug4.git
           git -C vdeplug4 checkout "$VDEPLUG4_SHA"
-          cmake -S vdeplug4 -B vdeplug4/build -DCMAKE_INSTALL_PREFIX="$PREFIX" -DCMAKE_PREFIX_PATH="$PREFIX"
+          cmake -S vdeplug4 -B vdeplug4/build -DCMAKE_INSTALL_PREFIX="$PREFIX" -DCMAKE_PREFIX_PATH="$PREFIX" -DCMAKE_INSTALL_LIBDIR=lib
           cmake --build vdeplug4/build -j"$(nproc)"
           cmake --install vdeplug4/build
 
@@ -138,14 +145,14 @@ jobs:
           # 4. libvdeslirp (cmake) -> wraps libslirp for VDE
           git clone https://github.com/virtualsquare/libvdeslirp.git
           git -C libvdeslirp checkout "$LIBVDESLIRP_SHA"
-          cmake -S libvdeslirp -B libvdeslirp/build -DCMAKE_INSTALL_PREFIX="$PREFIX" -DCMAKE_PREFIX_PATH="$PREFIX"
+          cmake -S libvdeslirp -B libvdeslirp/build -DCMAKE_INSTALL_PREFIX="$PREFIX" -DCMAKE_PREFIX_PATH="$PREFIX" -DCMAKE_INSTALL_LIBDIR=lib
           cmake --build libvdeslirp/build -j"$(nproc)"
           cmake --install libvdeslirp/build
 
           # 5. vdeplug_slirp (cmake) -> libvdeplug_slirp.so, implements the slirp:// VNL scheme
           git clone https://github.com/rd235/vdeplug_slirp.git
           git -C vdeplug_slirp checkout "$VDEPLUG_SLIRP_SHA"
-          cmake -S vdeplug_slirp -B vdeplug_slirp/build -DCMAKE_INSTALL_PREFIX="$PREFIX" -DCMAKE_PREFIX_PATH="$PREFIX"
+          cmake -S vdeplug_slirp -B vdeplug_slirp/build -DCMAKE_INSTALL_PREFIX="$PREFIX" -DCMAKE_PREFIX_PATH="$PREFIX" -DCMAKE_INSTALL_LIBDIR=lib
           cmake --build vdeplug_slirp/build -j"$(nproc)"
           cmake --install vdeplug_slirp/build
 
