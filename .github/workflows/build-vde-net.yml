@@ -174,7 +174,7 @@ jobs:
           # ${{ steps.metadata.outputs.title }}
 
           Relocatable VDE + SLiRP networking toolchain for UML's vector driver
-          (\`eth0=vde,vnl=slirp://\`). Built from pinned upstream commits:
+          (\`vec0:transport=vde,vnl=slirp://\`). Built from pinned upstream commits:
 
           - s2argv-execs: \`$S2ARGV_EXECS_SHA\`
           - vdeplug4: \`$VDEPLUG4_SHA\`
@@ -193,18 +193,30 @@ jobs:
           export PATH="\$HOME/vde-net/bin:\$PATH"
           export LD_LIBRARY_PATH="\$HOME/vde-net/lib:\$LD_LIBRARY_PATH"
 
-          ~/linux-fuse.um mem=2G rootfstype=hostfs rootflags=/ rw init=/bin/bash eth0=vde,vnl=slirp://
+          ~/linux-fuse.um mem=2G rootfstype=hostfs rootflags=/ rw init=/bin/bash 'vec0:transport=vde,vnl=slirp://'
           \`\`\`
 
-          Inside the UML guest, bring up \`eth0\` with the standard SLiRP defaults
-          (gateway/DNS at 10.0.2.2/10.0.2.3):
+          The vector driver names the interface \`vec0\`, not \`eth0\`; \`eth0=...\`
+          on the kernel command line is the removed legacy \`uml_net\` syntax and
+          is silently ignored. Bring it up with the standard SLiRP defaults
+          (gateway/DNS at 10.0.2.2/10.0.2.3). \`ip\` may not be installed in a
+          minimal guest, \`ifconfig\`/\`route\` (net-tools) are used instead:
 
           \`\`\`bash
-          ip link set lo up
-          ip link set eth0 up
-          ip addr add 10.0.2.15/24 dev eth0
-          ip route add default via 10.0.2.2 dev eth0
-          echo "nameserver 10.0.2.3" > /etc/resolv.conf
+          ifconfig lo up
+          ifconfig vec0 10.0.2.15 netmask 255.255.255.0 up
+          route add default gw 10.0.2.2 vec0
+          \`\`\`
+
+          hostfs enforces the real host user's file permissions even for
+          guest-root, so writing \`/etc/resolv.conf\` directly usually fails with
+          \`Permission denied\` if it is not owned by that user. Bind-mount a
+          writable copy over it instead:
+
+          \`\`\`bash
+          mkdir -p /tmp
+          printf 'nameserver 10.0.2.3\\n' > /tmp/resolv.conf
+          mount --bind /tmp/resolv.conf /etc/resolv.conf
           \`\`\`
           EOF
 

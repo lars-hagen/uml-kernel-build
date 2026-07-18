@@ -304,32 +304,42 @@ jobs:
           Install on TIKE:
 
           \`\`\`bash
-          curl -fL "https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/linux-$VERSION-\$(uname -m)-$BASE_SLUG" -o ~/linux-fuse.um && chmod +x ~/linux-fuse.um
+          curl -fsSL "https://raw.githubusercontent.com/$GITHUB_REPOSITORY/master/install.sh" | bash
           \`\`\`
+
+          This also fetches the [\`Build VDE SLiRP networking toolchain\`](.github/workflows/build-vde-net.yml)
+          release and writes \`~/uml-init.sh\`, a PID-1-safe wrapper (a plain
+          \`init=/bin/bash\` panics the kernel the moment you \`exit\`).
 
           ### Boot on TIKE
 
           \`\`\`bash
-          # 1. Boot UML (home dir accessible via hostfs)
-          ~/linux-fuse.um mem=2G rootfstype=hostfs rootflags=/ rw init=/bin/bash
+          # 1. Boot UML (home dir accessible via hostfs, VDE SLiRP networking enabled)
+          ~/linux-fuse.um mem=2G rootfstype=hostfs rootflags=/ rw init=~/uml-init.sh 'vec0:transport=vde,vnl=slirp://'
 
           # 2. Inside UML — /dev/fuse now works because UML has its own kernel
           mount -t proc proc /proc
           mount -t devtmpfs devtmpfs /dev
           mknod /dev/fuse c 10 229 && chmod 666 /dev/fuse
 
-          # 3. Mount Databricks UC volume via fuse4dbricks
-          export DATABRICKS_HOST=https://dbc-352750c6-daf4.cloud.databricks.com
-          ~/micromamba/envs/dbmount/bin/fuse4dbricks \\
-            --workspace "\$DATABRICKS_HOST" --no-unified-auth \\
-            --single-principal /mnt/uc &
-          sleep 3 && ls /mnt/uc
+          # 3. Bring up networking (interface is named vec0, not eth0)
+          ifconfig lo up
+          ifconfig vec0 10.0.2.15 netmask 255.255.255.0 up
+          route add default gw 10.0.2.2 vec0
+          mkdir -p /tmp && printf 'nameserver 10.0.2.3\\n' > /tmp/resolv.conf
+          mount --bind /tmp/resolv.conf /etc/resolv.conf
+
+          # 4. Mount a Databricks Unity Catalog volume via fuse4dbricks
+          export DATABRICKS_HOST="https://<workspace>.cloud.databricks.com"
+          export DATABRICKS_TOKEN="<personal-access-token>"
+          fuse4dbricks --workspace "\$DATABRICKS_HOST" --no-unified-auth \\
+            --single-principal ~/mnt-uc &
+          sleep 3 && ls ~/mnt-uc
           \`\`\`
 
-          > **Note:** Install VDE SLiRP support for rootless networking with
-          > \`vdeplug4\`, \`libvdeslirp\`, and \`vdeplug_slirp\` (github.com/virtualsquare),
-          > then boot with \`eth0=vde,vnl=slirp://\` before mounting volumes that
-          > require outbound HTTPS calls.
+          See the [\`Networking\`](README.md#networking) section for why \`eth0=\`
+          no longer works and how the hostfs write-permission restriction on
+          \`/etc/resolv.conf\` is handled.
           EOF
 
       - name: Upload staged release files
