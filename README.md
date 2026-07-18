@@ -9,12 +9,12 @@ The default build follows the Linux 6.18 LTS series, supported through December 
 One-liner (requires the `gh` CLI, already available on TIKE):
 
 ```bash
-gh release download --repo larshagen/uml-kernel-build \
+gh release download --repo lars-hagen/uml-kernel-build \
   --pattern "linux-*-$(uname -m)-amazonlinux-2023" \
   --output ~/linux-fuse.um \
   --clobber \
   --skip-existing 2>/dev/null || \
-gh release download --repo larshagen/uml-kernel-build --latest \
+gh release download --repo lars-hagen/uml-kernel-build --latest \
   --pattern "linux-*-$(uname -m)-amazonlinux-2023" \
   --output ~/linux-fuse.um --clobber
 chmod +x ~/linux-fuse.um
@@ -49,22 +49,44 @@ UML network transports (ethertap, tuntap, slip, daemon, mcast, slirp) were
 removed from the kernel in May 2025 (`e619e18ed462`, "um: Remove legacy network
 transport infrastructure") in favor of the vector driver.
 
-Install VDE SLiRP support in the persistent TIKE environment instead of building it in this workflow, building each in order (no packaged builds exist):
+Install VDE SLiRP support in the persistent TIKE environment from the
+[`Build VDE SLiRP networking toolchain`](.github/workflows/build-vde-net.yml)
+workflow's prebuilt release (no packaged builds exist upstream, and building
+`vdeplug4`, `libslirp`, `libvdeslirp`, and `vdeplug_slirp` from source takes a
+five-stage autotools/cmake/meson toolchain):
 
 ```bash
-for repo in vdeplug4 libvdeslirp vdeplug_slirp; do
-  git clone "https://github.com/virtualsquare/$repo.git"
-  cmake -S "$repo" -B "$repo/build"
-  cmake --build "$repo/build"
-  sudo cmake --install "$repo/build"
-done
+mkdir -p ~/vde-net
+gh release download vde-net-x86_64-amazonlinux-2023 \
+  --repo lars-hagen/uml-kernel-build \
+  --pattern "vde-slirp-net-x86_64-amazonlinux-2023.tar.gz" \
+  --output ~/vde-net.tar.gz --clobber
+tar -xzf ~/vde-net.tar.gz -C ~/vde-net --strip-components=1
+
+export PATH="$HOME/vde-net/bin:$PATH"
+export LD_LIBRARY_PATH="$HOME/vde-net/lib:$LD_LIBRARY_PATH"
 ```
 
 VDE's `slirp://` VNL provides the same rootless outbound networking previously
 supplied by `CONFIG_UML_NET_SLIRP`, now suitable for HTTPS calls to the
 Databricks API. The UML guest must also configure its interface, default
 route, DNS, and CA certificates. Pass the installed VDE SLiRP helper to UML
-with an `eth0=vde,vnl=slirp://` boot argument appropriate for the environment.
+with an `eth0=vde,vnl=slirp://` boot argument appropriate for the environment:
+
+```bash
+~/linux-fuse.um mem=2G rootfstype=hostfs rootflags=/ rw init=/bin/bash eth0=vde,vnl=slirp://
+```
+
+Then, inside the guest, bring up `eth0` with the standard SLiRP defaults
+(gateway/DNS at 10.0.2.2/10.0.2.3):
+
+```bash
+ip link set lo up
+ip link set eth0 up
+ip addr add 10.0.2.15/24 dev eth0
+ip route add default via 10.0.2.2 dev eth0
+echo "nameserver 10.0.2.3" > /etc/resolv.conf
+```
 
 ## Custom builds
 
