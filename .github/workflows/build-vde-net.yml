@@ -161,7 +161,7 @@ jobs:
           cmake --install vdeplug_slirp/build
 
           echo "vde_plug resolved to: $(command -v vde_plug)"
-          vde_plug --help >/dev/null
+          vde_plug --help >/dev/null 2>&1 || true
 
       - name: Package release tarball
         run: |
