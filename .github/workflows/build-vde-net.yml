@@ -26,7 +26,11 @@ env:
   S2ARGV_EXECS_SHA: 066b3fdcf6bf32253338e250af2d655c736be387
   VDEPLUG4_SHA: a595069806e756b7597d3629d404848289b61d2c
   LIBVDESLIRP_SHA: b062bb47ceded1752f54c470ded4c040ed1695b8
-  VDEPLUG_SLIRP_SHA: 27253e40103bf8e4af3aedc3a8bee5fafd1915b4
+  # virtualsquare/vdeplug_slirp is the current CMake-based plugin built on
+  # libvdeslirp. Do not use github.com/rd235/vdeplug_slirp: it is the old,
+  # deprecated, autotools-based plugin built on the equally deprecated
+  # github.com/rd235/libslirp and has no CMakeLists.txt.
+  VDEPLUG_SLIRP_SHA: 4801aac09da044b693954f71698dcfc26c6abd36
   # openSUSE/qemu-slirp is a real mirror of gitlab.freedesktop.org/slirp/libslirp.
   # Do not use github.com/utmapp/libslirp's "v4.9.1-release-mirror" tag: despite
   # the label it ships the old pre-SlirpConfig API and will not build against
@@ -150,7 +154,7 @@ jobs:
           cmake --install libvdeslirp/build
 
           # 5. vdeplug_slirp (cmake) -> libvdeplug_slirp.so, implements the slirp:// VNL scheme
-          git clone https://github.com/rd235/vdeplug_slirp.git
+          git clone https://github.com/virtualsquare/vdeplug_slirp.git
           git -C vdeplug_slirp checkout "$VDEPLUG_SLIRP_SHA"
           cmake -S vdeplug_slirp -B vdeplug_slirp/build -DCMAKE_INSTALL_PREFIX="$PREFIX" -DCMAKE_PREFIX_PATH="$PREFIX" -DCMAKE_INSTALL_LIBDIR=lib
           cmake --build vdeplug_slirp/build -j"$(nproc)"
