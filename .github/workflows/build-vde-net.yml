@@ -66,17 +66,17 @@ jobs:
           if command -v dnf >/dev/null 2>&1; then
             dnf install -y --allowerasing \
               gcc gcc-c++ make cmake automake autoconf libtool pkgconf-pkg-config \
-              glib2-devel git tar gzip which meson ninja-build
+              glib2-devel git tar gzip which meson ninja-build python3-pip
           elif command -v yum >/dev/null 2>&1; then
             yum install -y \
               gcc gcc-c++ make cmake automake autoconf libtool pkgconfig \
-              glib2-devel git tar gzip which meson ninja-build
+              glib2-devel git tar gzip which meson ninja-build python3-pip
           elif command -v apt-get >/dev/null 2>&1; then
             export DEBIAN_FRONTEND=noninteractive
             apt-get update
             apt-get install -y \
               build-essential cmake automake autoconf libtool pkg-config \
-              libglib2.0-dev git tar gzip meson ninja-build
+              libglib2.0-dev git tar gzip meson ninja-build python3-pip
           else
             echo "::error::No supported package manager found (need dnf, yum, or apt-get)."
             exit 1
